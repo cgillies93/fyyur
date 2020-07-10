@@ -337,17 +337,17 @@ def edit_venue(venue_id):
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
   venue = Venue.query.filter_by(id=venue_id).first()
+  venue.name = request.form['name']
+  venue.city = request.form['city']
+  venue.state = request.form['state']
+  venue.address = request.form['address']
+  venue.phone = request.form['phone']
+  venue.genres = request.form.getlist('genres')
+  venue.facebook_link = request.form['facebook_link']
+  venue.website_link = request.form['website_link']
+  venue.image_link = request.form['image_link']
+  venue.seeking_performers = request.form.get("seeking_performers")
   try:
-      venue.name = request.form['name']
-      venue.city = request.form['city']
-      venue.state = request.form['state']
-      venue.address = request.form['address']
-      venue.phone = request.form['phone']
-      venue.genres = request.getlist('genres')
-      venue.facebook_link = request.form['facebook_link']
-      venue.website_link = request.form['website_link']
-      venue.image_link = request.form['image_link']
-      venue.seeking_performers = request.form["seeking_performers"]
       db.session.commit()
       flash("Venue: " + venue.name + " updated succefully!")
   except:
