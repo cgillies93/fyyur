@@ -1,0 +1,102 @@
+{% extends 'layouts/main.html' %}
+{% block title %}Venue Search{% endblock %}
+{% block content %}
+<div class="row">
+	<div class="col-sm-6">
+		<div class="name-edit-div">
+			<h1 class="monospace">
+				{{ data.venue.name }}
+			</h1>
+			<div class="edit-delete">
+				<p>
+					<a href="{{ url_for('edit_venue', venue_id=data.venue.id) }}">Edit</a>
+				</p>
+				<p>
+					<a id="deleteBtn">Delete</a>
+				</p>
+			</div>
+			<div id="myModal" class="modal">
+  			<div class="modal-content">
+	    		<span class="close" onclick="close()">&times;</span>
+	    		<p>Are you sure you want to delete {{ data.venue.name }} from venues?</p>
+					<div class="modal-btns">
+						<form class="confirm-delete" action="/venues/{{ data.venue.id }}" method="delete">
+							<input class="confirm-delete-btn" type="submit" name="confirm-delete" value="Delete Venue">
+						</form>
+						<input class="cancel-delete-btn" type="button" name="cancel-delete" value="Cancel">
+					</div>
+  			</div>
+			</div>
+		</div>
+		<p class="subtitle">
+			ID: {{ data.venue.id }}
+		</p>
+		<div class="genres">
+				{% for genre in data.genres %}
+				<span class="genre">{{ genre }}</span>
+				{% endfor %}
+		</div>
+		<p>
+			<i class="fas fa-globe-americas"></i> {{ data.venue.city }}, {{ data.venue.state }}
+		</p>
+		<p>
+			<i class="fas fa-map-marker"></i> {% if data.venue.address %}{{ data.venue.address }}{% else %}No Address{% endif %}
+		</p>
+		<p>
+			<i class="fas fa-phone-alt"></i> {% if data.venue.phone %}{{ data.venue.phone }}{% else %}No Phone{% endif %}
+		</p>
+		<p>
+			<i class="fas fa-link"></i> {% if data.venue.website_link %}<a href="{{ data.venue.website_link }}" target="_blank">{{ data.venue.website_link }}</a>{% else %}No Website{% endif %}
+		</p>
+		<p>
+			<i class="fab fa-facebook-f"></i> {% if data.venue.facebook_link %}<a href="{{ data.venue.facebook_link }}" target="_blank">{{ data.venue.facebook_link }}</a>{% else %}No Facebook Link{% endif %}
+		</p>
+		{% if data.venue.seeking_performers %}
+		<div class="seeking">
+			<p class="lead">Currently seeking talent</p>
+			<div class="description">
+				<i class="fas fa-quote-left"></i> We are currently seeking artists to perform at our venue!!<i class="fas fa-quote-right"></i>
+			</div>
+		</div>
+		{% else %}
+		<p class="not-seeking">
+			<i class="fas fa-moon"></i> Not currently seeking talent
+		</p>
+		{% endif %}
+	</div>
+	<div class="col-sm-6">
+		{% if data.venue.image_link %}
+		<img src="{{ data.venue.image_link }}" alt="Venue Image" />
+		{% endif %}
+	</div>
+</div>
+<section>
+	<h2 class="monospace">{{ data.upcoming_shows_count }} Upcoming {% if data.upcoming_shows_count == 1 %}Show{% else %}Shows{% endif %}</h2>
+	<div class="row">
+		{%for show in data.upcoming_shows %}
+		<div class="col-sm-4">
+			<div class="tile tile-show">
+				<img src="{{ show.artist_image_link }}" alt="Show Artist Image" />
+				<h5><a href="/artists/{{ show.artist_id }}">{{ show.artist_name }}</a></h5>
+				<h6>{{ show.start_time|datetime('full') }}</h6>
+			</div>
+		</div>
+		{% endfor %}
+	</div>
+</section>
+<section>
+	<h2 class="monospace">{{ data.past_shows_count }} Past {% if data.past_shows_count == 1 %}Show{% else %}Shows{% endif %}</h2>
+	<div class="row">
+		{%for show in data.past_shows %}
+		<div class="col-sm-4">
+			<div class="tile tile-show">
+				<img src="{{ show.artist_image_link }}" alt="Show Artist Image" />
+				<h5><a href="/artists/{{ show.artist_id }}">{{ show.artist_name }}</a></h5>
+				<h6>{{ show.start_time|datetime('full') }}</h6>
+			</div>
+		</div>
+		{% endfor %}
+	</div>
+</section>
+
+{% endblock %}
