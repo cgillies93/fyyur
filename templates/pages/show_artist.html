@@ -7,11 +7,26 @@
 			<h1 class="monospace">
 				{{ data.artist.name }}
 			</h1>
-			<p class="subtitle">
-				<a href="{{ url_for('edit_artist', artist_id=data.artist.id) }}">Edit Artist</a>
-			</p>
+			<div class="edit-delete">
+				<p>
+					<a href="{{ url_for('edit_artist', artist_id=data.artist.id) }}">Edit</a>
+				</p>
+				<p>
+					<a id="deleteArtistBtn">Delete</a>
+				</p>
+			</div>
+			<div id="myModal" class="modal">
+  			<div class="modal-content">
+	    		<span class="close" onclick="close()">&times;</span>
+	    		<p>Are you sure you want to delete {{ data.artist.name }} from Artists?</p>
+					<div class="modal-btns">
+						<input class="confirm-artist-delete-btn" type="submit" value="Delete Artist">
+						<input class="cancel-delete-btn" type="button" name="cancel-delete" value="Cancel">
+					</div>
+  			</div>
+			</div>
 		</div>
-		<p class="subtitle">
+		<p class="subtitle" id="artist_id">
 			ID: {{ data.artist.id }}
 		</p>
 		<div class="genres">

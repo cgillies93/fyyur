@@ -221,10 +221,6 @@ h2.monospace {
 
 }
 
-#seeking_performances, #seeking_performers{
-  height: 18px;
-  width: 10%;
-}
 
 .modal {
   display: none; /* Hidden by default */
@@ -269,8 +265,6 @@ h2.monospace {
   margin-right: 20px;
 }
 
-
-
 /* The Close Button */
 .close {
   color: black;
@@ -284,4 +278,21 @@ h2.monospace {
   color: #000;
   text-decoration: none;
   cursor: pointer;
+}
+
+#seeking_div {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.seeking_check {
+  width: 100%;
+  height: 20px;
+  width: 30px;
+}
+
+.seeking_description,
+.seeking_label {
+  display: none;
 }

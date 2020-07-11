@@ -23,7 +23,12 @@ moment = Moment(app)
 app.config.from_object('config')
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-# TODO: connect to a local postgresql database
+
+@app.after_request
+def after_request(response):
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, true")
+    response.headers.add("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+    return response
 
 #----------------------------------------------------------------------------#
 # Models.
@@ -54,6 +59,7 @@ class Venue(db.Model):
     facebook_link = db.Column(db.String(120))
     website_link = db.Column(db.String(120))
     seeking_performers = db.Column(db.CHAR, server_default="y")
+    seeking_description = db.Column(db.String())
 
 
 class Artist(db.Model):
@@ -69,19 +75,20 @@ class Artist(db.Model):
     facebook_link = db.Column(db.String(120))
     website_link = db.Column(db.String(120))
     seeking_performances = db.Column(db.CHAR, server_default="y")
+    seeking_description = db.Column(db.String())
 
 
 
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+
 class Show(db.Model):
     __tablename__ = 'Show'
 
     id = db.Column(db.Integer, primary_key=True)
-    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), nullable=False)
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), nullable=False)
+    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id', ondelete="CASCADE"), nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id', ondelete="CASCADE"), nullable=False)
     start_time = db.Column(db.DateTime, nullable=False)
-    artists = db.relationship('Artist', secondary=artist_shows, backref=db.backref('shows', lazy=True))
-    venues = db.relationship('Venue', secondary=venue_shows, backref=db.backref('venues', lazy=True))
+    artists = db.relationship('Artist', secondary=artist_shows, backref=db.backref('shows', cascade='all,delete', lazy=True))
+    venues = db.relationship('Venue', secondary=venue_shows, backref=db.backref('venues', cascade='all,delete', lazy=True))
 
 
 
@@ -148,7 +155,9 @@ def show_venue(venue_id):
   genres = [genre.replace("}","") for genre in genres ]
   genres = [genre.replace("{","") for genre in genres ]
   now = datetime.utcnow()
-  upcoming_shows = Show.query.filter(Show.venue_id == venue_id, Show.start_time > now).all()
+  upcoming_shows = Show.query.filter(Show.venue_id == venue_id,
+  Show.start_time > now).order_by(Show.start_time).all()
+
   upcoming_shows_list = []
   for show_listing in upcoming_shows:
       artist = Artist.query.get(show_listing.artist_id)
@@ -159,7 +168,9 @@ def show_venue(venue_id):
         "start_time": str(show_listing.start_time)
       }
       upcoming_shows_list.append(show)
-  past_shows = upcoming_shows = Show.query.filter(Show.venue_id == venue_id, Show.start_time < now).all()
+  past_shows = upcoming_shows = Show.query.filter(Show.venue_id == venue_id,
+  Show.start_time < now).order_by(Show.start_time).all()
+
   past_shows_list = []
   for show_listing in past_shows:
       artist = Artist.query.get(show_listing.artist_id)
@@ -203,10 +214,11 @@ def create_venue_submission():
       facebook_link = request.form['facebook_link']
       website_link = request.form['website_link']
       image_link = request.form['image_link']
-      seeking_performers = request.form['seeking_performers']
+      seeking_performers = request.form.get('seeking_performers')
+      seeking_description = request.form['seeking_description']
       venue = Venue(name=name, city=city, state=state, address=address, phone=phone,
       genres=genres, facebook_link=facebook_link, seeking_performers=seeking_performers,
-      image_link=image_link, website_link=website_link)
+      image_link=image_link, website_link=website_link, seeking_description=seeking_description)
       db.session.add(venue)
       db.session.commit()
   except:
@@ -233,7 +245,7 @@ def delete_venue(venue_id):
   finally:
       db.session.close()
       flash('Venue ' + venue.name + ' was successfully deleted!')
-  return render_template('pages/home.html')
+  return redirect(url_for('index'))
 
 #  Artists
 #  ----------------------------------------------------------------
@@ -260,7 +272,10 @@ def show_artist(artist_id):
   genres = [genre.replace("}","") for genre in genres ]
   genres = [genre.replace("{","") for genre in genres ]
   now = datetime.utcnow()
-  upcoming_shows = Show.query.filter(Show.artist_id == artist_id, Show.start_time > now).all()
+
+  upcoming_shows = Show.query.filter(Show.artist_id == artist_id,
+  Show.start_time > now).order_by(Show.start_time).all()
+
   upcoming_shows_list = []
   for show_listing in upcoming_shows:
       venue = Venue.query.get(show_listing.venue_id)
@@ -272,7 +287,9 @@ def show_artist(artist_id):
       }
       upcoming_shows_list.append(show)
 
-  past_shows = upcoming_shows = Show.query.filter(Show.artist_id == artist_id, Show.start_time < now).all()
+  past_shows = upcoming_shows = Show.query.filter(Show.artist_id == artist_id,
+  Show.start_time < now).order_by(Show.start_time).all()
+
   past_shows_list = []
   for show_listing in past_shows:
       venue = Venue.query.get(show_listing.venue_id)
@@ -315,7 +332,8 @@ def edit_artist_submission(artist_id):
       artist.facebook_link = request.form['facebook_link']
       artist.website_link = request.form['website_link']
       artist.image_link = request.form['image_link']
-      artist.seeking_performances = request.form['seeking_performances']
+      artist.seeking_performances = request.form.get('seeking_performances')
+      artist.seeking_description = request.form['seeking_description']
       db.session.commit()
       flash("Artist: " + artist.name + " updated succefully!")
   except:
@@ -347,6 +365,7 @@ def edit_venue_submission(venue_id):
   venue.website_link = request.form['website_link']
   venue.image_link = request.form['image_link']
   venue.seeking_performers = request.form.get("seeking_performers")
+  venue.seeking_description = request.form['seeking_description']
   try:
       db.session.commit()
       flash("Venue: " + venue.name + " updated succefully!")
@@ -377,8 +396,12 @@ def create_artist_submission():
         facebook_link = request.form['facebook_link']
         website_link = request.form['website_link']
         image_link = request.form['image_link']
+        seeking_performances = request.form.get('seeking_performances')
+        seeking_description = request.form['seeking_description']
         artist = Artist(name=name, city=city, state=state, phone=phone,
-                        genres=genres, facebook_link=facebook_link, website_link=website_link, image_link=image_link)
+                        genres=genres, facebook_link=facebook_link,
+                        website_link=website_link, image_link=image_link,
+                        seeking_performances=seeking_performances, seeking_description=seeking_description)
         db.session.add(artist)
         db.session.commit()
     except:
@@ -394,12 +417,29 @@ def create_artist_submission():
     return render_template('pages/home.html')
 
 
+@app.route('/artists/<int:artist_id>', methods=['DELETE'])
+def delete_artist(artist_id):
+    artist = Artist.query.filter_by(id=artist_id).first_or_404()
+    try:
+        db.session.delete(artist)
+        db.session.commit()
+    except:
+        db.session.rollback()
+        flash('An error occured. Artist ' + artist_id + ' could not be deleted.')
+    finally:
+        db.session.close()
+        flash('Artist ' + artist.name + ' was successfully deleted!')
+
+    return redirect(url_for('index'))
+
+
+
 #  Shows
 #  ----------------------------------------------------------------
 
 @app.route('/shows')
 def shows():
-  shows = Show.query.all()
+  shows = Show.query.order_by(Show.start_time).all()
   dataset = []
   for show in shows:
       venue = Venue.query.get(show.venue_id)
